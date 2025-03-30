@@ -20,12 +20,12 @@ void initADC(){
   // Specify ADC input channel and mode
   // Set ADC7 as single-ended input with MUX[5:0] = 0b000111
   // Set to channel 7 
-  ADCSRB |= (1 << MUX5);  
-  ADMUX |= (1 << MUX4);
-  ADMUX |= (1 << MUX3);
-  ADMUX &= ~(1 << MUX2) 
-  ADMUX &= ~(1 << MUX1);
-  ADMUX &= ~(1 << MUX0);
+  ADCSRB &= ~(1 << MUX5);  
+  ADMUX &= ~(1 << MUX4);
+  ADMUX &= ~(1 << MUX3);
+  ADMUX |= (1 << MUX2) 
+  ADMUX |= (1 << MUX1);
+  ADMUX |= (1 << MUX0);
 
   // 4. enable ADC and 5. enable auto-triggering
   ADCSRA|= (1 << ADEN) | (1 << ADATE);
