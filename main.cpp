@@ -14,7 +14,12 @@
 #include "SevenSegment.h"
 #include "switch.h"
 #include "timer.h"
+#include "adc.h"
+#include "pwm.h"
 #include <avr/interrupt.h>
+
+volatile unsigned char motorState = 1;
+
 
 
 typedef enum {
@@ -32,11 +37,24 @@ int main(){
   initSwitch();
   initTimer0();
   initSevenSegment(); 
+  initADC();
+  initPWMTimer3();
   sei(); // Enable global interrupts.
+
+  unsigned int ADCValue = 0;
+  unsigned int dutyCycle = 0;
 // while loop
 while (1) {
   switch (state) {
-    case WaitPress:     // Waiting for press 
+    case WaitPress: // Waiting for press 
+      delayMS(1);
+      
+      changeDutyCycle(0);
+      
+      
+      
+      
+      
       break;
 
     case DebouncePress:     // Debouncing press 
@@ -59,10 +77,30 @@ while (1) {
         displayDigit(i); // Display digit
         delaySec(1); // Wait for 1 second
       }
+      motorState = 0;
       sei(); // Enable interrupts
       state = WaitPress; // Return to waiting state after displaying digits
       break;
   }
+
+  motorState = 1;
+  if(motorState){
+    ADCValue = readADC();
+
+    if(ADCValue < 512){
+      motorDirection(0);
+      dutyCycle = (511 - ADCValue) * 2;
+    }
+
+    else{
+      motorDirection(1);
+      dutyCycle = (ADCValue - 512) * 2;
+    }
+
+    changeDutyCycle(dutyCycle);
+
+  }
+  
 }
   return 0;
 }
