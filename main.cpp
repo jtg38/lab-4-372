@@ -49,7 +49,7 @@ while (1) {
 
     case DebounceRelease:     // Debouncing release 
       delayMs(50);
-      state = WaitPress;
+      state = SevenSegment;
       break;
     case SevenSegment:
       delayMs(50);
