@@ -48,7 +48,7 @@ while (1) {
   switch (state) {
     case WaitPress: // Waiting for press 
       delayMS(1);
-      
+      motorState = 1;
       changeDutyCycle(0);
       
       
@@ -83,7 +83,7 @@ while (1) {
       break;
   }
 
-  motorState = 1;
+  
   if(motorState){
     ADCValue = readADC();
 
