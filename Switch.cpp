@@ -1,7 +1,7 @@
 // Author: Tallen Monnett        
 // Net ID: tmonnett        
 // Date: 3/29/2025         
-// Assignment: Lab 4
+// Assignment: Lab 5
 // Description: This file implements the initialization of an external
 // switch.
 //----------------------------------------------------------------------//
