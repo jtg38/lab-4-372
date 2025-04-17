@@ -10,8 +10,8 @@
 #include <avr/io.h>
 
 void initSwitch() {
-    DDRD &= ~(1 << DDD0); // Set PD0 as input (INT0)
-    PORTD |= (1 << PORTD0); // Enable pull-up resistor on PD0
-    EICRA |= (1 << ISC00); // Trigger INT0 on any logical change
-    EIMSK |= (1 << INT0); // Enable INT0 interrupt
+    DDRE &= ~(1 << DDE0); // Set PE0 as input (INT0)
+    PORTE |= (1 << PORTE0); // Enable pull-up resistor on PE0
+    PCICR |= (1<<PCIE1); 
+    PCMSK1 |= (1<<PCINT8);
 }
