@@ -1,6 +1,11 @@
 #include <Arduino.h>
 #include <avr/io.h>
+#include <avr/interrupt.h>
+#include "switch.h"
+#include "timer.h"
+#include "pwm.h"
 #include "spi.h"
+#include "i2c.h"
 
 
 
