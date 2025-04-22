@@ -1,85 +1,191 @@
-// Author: Tallen Monnett        
-// Net ID: tmonnett        
-// Date: 4/17/2025         
-// Assignment: Lab 5
-// Description: 
-//----------------------------------------------------------------------//
 #include <Arduino.h>
 #include <avr/io.h>
-#include "switch.h"
-#include "timer.h"
-#include "pwm.h"
-#include <avr/interrupt.h>
+#include "spi.h"
 
-unsigned char POWER_CTL = 0x2D; // Power Control Register
-unsigned char DATA_FORMAT = 0x31; // Data Format Register
+
+
+unsigned char frowny[8] = {
+  0b00111100,
+  0b01000010,
+  0b10100101,
+  0b10000001,
+  0b10011001,
+  0b10100101,
+  0b01000010,
+  0b00111100
+};
+
+unsigned char smiley[8] = {
+  0b00111100,
+  0b01000010,
+  0b10100101,
+  0b10000001,
+  0b10100101,
+  0b10011001,
+  0b01000010,
+  0b00111100
+};
 
 typedef enum {
   WaitPress,     // Waiting for press
   DebouncePress,     // Debouncing press
   WaitRelease,     // Waiting for release
-  DebounceRelease,      // Debouncing release
-} Button;
+  DebounceRelease    // Debouncing release
+} STATES1;
 
 typedef enum {
-  WaitSmile,
-  Smile,
-  WaitFrown,
-  Frown,
-} Face;
+  read_data, 
+  buzzerON,
+  buzzerOff
+} STATES2;
 
-volatile Button ButtonState = WaitPress;
-volatile Face FaceState = WaitSmile;
+
+volatile STATES1 state1 = WaitPress;
+
+
+unsigned char POWER_CTL = 0x2D; // Power Control Register
+unsigned char DATA_FORMAT = 0x31; // Data Format Registe
+
+
+
+
+
+volatile STATES2 place_state = read_data;
+volatile STATES1 buttonState = WaitPress;
+
+// Main code of the function
 int main(){
-  initTimer1();
-  initSwitch();
-  initPWMTimer3();
-  spi_write(DATA_FORMAT, 0x00); // configure 4-wire mode by clearing the SPI bit
-  spi_write(POWER_CTL, 0x08); // set to measure mode
-  sei(); // Enable global interrupts.
+   sei();
 
-// while loop
-while (1) {
-  switch (ButtonState) {
-    case WaitPress: // Waiting for press 
-      break;
 
-    case DebouncePress:     // Debouncing press 
-      delayMs(1);
-      ButtonState = WaitRelease;
-      break;
+   
+   MPUObj MPU = MPUObj();      //Initialize the MPU Object with I2C communication
 
-    case WaitRelease:     // Waiting for release 
-      break;
 
-    case DebounceRelease:     // Debouncing release 
-      delayMs(1);
-      ButtonState = WaitRelease;
-      break;
-  }
-  
-}
-  return 0;
-}
+   MPU.level(); // Zero out the MPU
 
-ISR(INT0_vect) { // Interrupt service routine for switch press/release
-  // Check if the switch is pressed or released
-  switch(ButtonState) {
-    case WaitPress: // Waiting for press 
-      ButtonState = DebouncePress;
-      break;
+
+   
+   int xRotThresh = 11000;
+   int yRotThresh = 11000;   
+
+
+   Serial.begin(9600);
+   displayFaceSPI(smiley);
+
+
+   int i = 1000;
+   IncFrequency(i);
+   setDutyCycle(0);
+
+
+   while (1){
+       
+       MPU.getMPUState();
+       Serial.print("X: " + String(MPU.xRot) + "  Y: " + String(MPU.yRot) + "  Z: " + String(MPU.zRot));
+       // Serial.println();
       
-    case DebouncePress: // Debouncing press 
-      break;
-      
-    case WaitRelease: // Waiting for release 
-      ButtonState = DebounceRelease;
-      break;
-      
-    case DebounceRelease: // Debouncing release 
-      ButtonState = WaitPress;
-      break;
-  }
+       switch(buttonState){
+           case WaitPress:
+             break;
+           case DebouncePress:
+             delayMs(0.1);
+             buttonState = WaitRelease;
+             break;
+           case WaitRelease:
+             break;
+           case DebounceRelease:
+             delayMs(0.1);
+             if(place_state == buzzerON){
+               setDutyCycle(0);
+                place_state = buzzerOff;
+             }
+
+
+             buttonState = WaitPress;
+             break;
+         }
+
+
+
+
+       // 
+       switch (place_state){
+         case read_data:
+           Serial.print("Read data");
+           if (abs(MPU.yRot) > yRotThresh || abs(MPU.xRot) > xRotThresh){ 
+               // Serial.print(" AAHHHH");
+               displayFace(frowny);
+               place_state = buzzerON;
+           }
+
+
+           else{
+               displayFace(smiley);
+           }
+           delayMs(100);
+           break;
+
+
+         case buzzerON:
+           Serial.print("Buzzer state");
+           
+           for (i = 1000; i < 4000; i++){
+               IncFrequency(i);
+               setDutyCycle(0.1);
+           }
+           
+           
+           
+           if (abs(MPU.xRot) > xRotThresh || abs(MPU.yRot) > yRotThresh){ 
+               
+               displayFace(frowny);
+           }
+
+
+           else{
+               displayFace(smiley);
+           }
+
+
+           break;
+
+
+           case buzzerOff:
+           Serial.println("Buzzeroff state");
+           //MPU.getMPUState();
+           if (abs(MPU.xRot) < xRotThresh && abs(MPU.yRot) < yRotThresh){ 
+             // Serial.print(" AAHHHH");
+             place_state = read_data;
+         }
+           
+
+
+       }
+       
+
+
+       
+
+
+       Serial.println();
+
+
+   }
+
+
 }
 
 
+ISR(PCINT1_vect){
+   
+   if(buttonState == WaitPress){
+       buttonState = DebouncePress;
+       
+     }
+   
+   else if (buttonState == WaitRelease){
+     buttonState = DebounceRelease;
+     
+   }
+}
