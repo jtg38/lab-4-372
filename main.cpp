@@ -77,6 +77,8 @@ int main(){
     Serial.begin(9600);
     Serial.println("System Initializing...");
 
+    //dont have freq_count, data, trigger
+
     initTimer1();      
     initSwitch();      
     initPWMTimer4();   
@@ -89,23 +91,28 @@ int main(){
     write_execute(MAX7219_REG_SHUTDOWN, 0x01);    // Shutdown mode off (normal operation)
     write_execute(MAX7219_REG_DISPLAYTEST, 0x00); // No display test
     write_execute(MAX7219_REG_INTENSITY, 0x08);   // Set brightness (0-15)
+    //Line 93 is different
     for (int i = 0; i < 8; i++) { write_execute(MAX7219_REG_DIGIT0 + i, 0x00); } // Clear display
+
+    //Line 95 is different
     Serial.println("MAX7219 Initialized.");
 
     Serial.println("Waking up MPU6050...");
+
     StartI2C_Trans(MPU6050_SLA); // Start I2C transmission
     Write(PWR_MGMT_1);           // Send Power Management register address
     Write(WAKEUP);               // Send Wake up command (0x00)
     StopI2C_Trans();             // Stop I2C transmission
     Serial.println("MPU6050 Wakeup Sent.");
-    delayMs(100); 
+    delayMs(100);  //different (doubt it would matter though)
 
     displayFace(smiley);      
     change_frequency(1000);   // Set an initial frequency
+    //Line 110 we start with a different frequency
     change_duty_cycle(0);     
 
-    int xRotThresh = 11000; 
-    int yRotThresh = 11000;
+    int xRotThresh = 10000; //made this chang
+    int yRotThresh = 10000; //made this chnage
 
     int acc_x = 0;
     int acc_y = 0;
@@ -121,6 +128,7 @@ int main(){
         Read_from(MPU6050_SLA, ACCEL_XOUT_L); // Point to X_L register
         low_byte = Read_data();               // Read X_L
         acc_x = (int)((high_byte << 8) | low_byte); // Combine bytes
+      
 
         // Read Y-axis
         Read_from(MPU6050_SLA, ACCEL_YOUT_H); // Point to Y_H register
@@ -176,7 +184,7 @@ int main(){
 
             case buzzerON:
                 Serial.print("State: buzzerON");
-                change_frequency(2000); 
+                change_frequency(2000); //change this
                 change_duty_cycle(0.1); 
                 delayMs(100);           
                 if (systemState != buzzerON) break; 
@@ -188,7 +196,7 @@ int main(){
                 if (abs(acc_y) > yRotThresh || abs(acc_x) > xRotThresh){
                     displayFace(frowny);
                 } else {
-                    displayFace(frowny); 
+                    displayFace(smiley); 
                 }
                 break;
             case buzzerOff:
