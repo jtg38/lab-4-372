@@ -184,12 +184,15 @@ int main(){
 
             case buzzerON:
                 Serial.print("State: buzzerON");
-                change_frequency(2000); //change this
                 change_duty_cycle(0.1); 
+                for (int i = 1000; i<=3000; i++){
+                    change_frequency(i);
+                }
                 delayMs(100);           
                 if (systemState != buzzerON) break; 
-
-                change_frequency(3000); 
+                for (int i = 3000; i>=1000; i--){
+                    change_frequency(i);
+                }
                 delayMs(100);          
                 if (systemState != buzzerON) break; 
                 // Update face 
