@@ -1,8 +1,9 @@
 #include <Arduino.h>
 #include <avr/io.h>
 #include "spi.h"
-
-
+#include "pwm.h"
+#include "timer.h"
+#include <avr/interrupt.h>
 
 unsigned char frowny[8] = {
   0b00111100,
@@ -55,19 +56,13 @@ volatile STATES1 buttonState = WaitPress;
 
 // Main code of the function
 int main(){
-   sei();
+  initPWMTimer3();
+  initTimer1();
+  initTimer0();
+  sei();
 
 
    
-   MPUObj MPU = MPUObj();      //Initialize the MPU Object with I2C communication
-
-
-   MPU.level(); // Zero out the MPU
-
-
-   
-   int xRotThresh = 11000;
-   int yRotThresh = 11000;   
 
 
    Serial.begin(9600);
