@@ -1,7 +1,7 @@
 // Author: Tallen Monnett        
 // Net ID: tmonnett        
-// Date: 3/27/2025         
-// Assignment: Lab 4
+// Date: 3/20/2025         
+// Assignment: Lab 3
 //----------------------------------------------------------------------//
 
 #ifndef TIMER_H
@@ -10,7 +10,7 @@
 #include <avr/io.h>
 
 void initTimer1();
-void delaySec(unsigned int delay);
+void delayUs(unsigned int delay);
 void initTimer0();
 void delayMs(unsigned int delay); 
 
