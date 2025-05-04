@@ -1,186 +1,115 @@
-#include <Arduino.h>
-#include <avr/io.h>
-#include "spi.h"
+#include "HCSR04.h"
+#include "timer.h" 
 #include "pwm.h"
-#include "timer.h"
-#include <avr/interrupt.h>
+#include <Arduino.h>
+#include "spi.h"
 
-unsigned char frowny[8] = {
-  0b00111100,
-  0b01000010,
-  0b10100101,
+unsigned char StopLED[8] = {
   0b10000001,
-  0b10011001,
-  0b10100101,
   0b01000010,
-  0b00111100
+  0b00100100,
+  0b00011000,
+  0b00011000,
+  0b00100100,
+  0b01000010,
+  0b10000001
 };
 
-unsigned char smiley[8] = {
-  0b00111100,
-  0b01000010,
-  0b10100101,
-  0b10000001,
-  0b10100101,
-  0b10011001,
-  0b01000010,
-  0b00111100
+unsigned char ForwardLED[8] = {
+  0b00000000,
+  0b00100000,
+  0b01100000,
+  0b11111111,
+  0b01100000,
+  0b00100000,
+  0b00000000,
+  0b00000000
 };
 
+unsigned char ReverseLED[8] = {
+  0b00000000,
+  0b00000100,
+  0b00000110,
+  0b11111111,
+  0b00000110,
+  0b00000100,
+  0b00000000,
+  0b00000000
+};
+
+
 typedef enum {
-  WaitPress,     // Waiting for press
-  DebouncePress,     // Debouncing press
-  WaitRelease,     // Waiting for release
-  DebounceRelease    // Debouncing release
-} STATES1;
+  Forward, 
+  Stopped,
+  Reverse
+} STATES;
 
-typedef enum {
-  read_data, 
-  buzzerON,
-  buzzerOff
-} STATES2;
+volatile STATES state = Forward; 
+void displayFace(unsigned char face[8]) {
+  for (int i = 0; i < 8; i++) {
+      write_execute(0x01 + i, face[i]); //
+  }
+}
 
-
-volatile STATES1 state1 = WaitPress;
-
-
-unsigned char POWER_CTL = 0x2D; // Power Control Register
-unsigned char DATA_FORMAT = 0x31; // Data Format Registe
-
-
-
-
-
-volatile STATES2 place_state = read_data;
-volatile STATES1 buttonState = WaitPress;
-
-// Main code of the function
 int main(){
-  initPWMTimer3();
-  initTimer1();
-  initTimer0();
   sei();
+  Serial.begin(9600);
+  HCSR04_init();
+  SPI_MASTER_Init();
+  //initPWMTimer3();
+  write_execute(0x0B, 0x07);   // Display all 8 digits
+  write_execute(0x09, 0x00);  // No decode mode (directly control segments)
+  write_execute(0x0C, 0x01);    // Shutdown mode off (normal operation)
+  write_execute(0x0F, 0x00); // No display test
+  write_execute(0x0A, 0x08);   // Set brightness (0-15)
+  for (int i = 0; i < 8; i++) { write_execute(0x01 + i, 0x00); } // Clear display
+  delayMs(100);
+  displayFace(ForwardLED); 
+  int stop_delay_counter = 0; // Counter for delay in Stopped state
+  const int STOP_DELAY_TARGET = 10; // Target delay in Stopped state 
+  const int LOOP_DELAY_MS = 100; // Delay for each loop iteration 
+while(1){
+  float distance = HCSR04_distance();
 
+  Serial.print("Distance: ");
+  if (distance > 0) {
+      Serial.print(distance);
+      Serial.println(" cm");
+  } 
 
-   
+  if (distance > 0) {
+      // Condition to return to Forward 
+      if ((state == Stopped || state == Reverse) && distance > 15) {
+          state = Forward;
+      }
+      // Condition to enter Stopped 
+      else if (state == Forward && distance < 10) {
+          state = Stopped;
+          stop_delay_counter = 0; 
+      }
+  }
+  // Actions based on Current State 
+  switch(state) {
+    case Forward:
+      displayFace(ForwardLED);
+      // Motor Forward Code
+      break;
 
+    case Stopped:
+      displayFace(StopLED);
+      // Motor Stop Code
+      stop_delay_counter++; 
+      // Check if delay is complete
+      if (stop_delay_counter >= STOP_DELAY_TARGET) {
+         state = Reverse; 
+      }
+      break;
 
-   Serial.begin(9600);
-   displayFaceSPI(smiley);
-
-
-   int i = 1000;
-   IncFrequency(i);
-   setDutyCycle(0);
-
-
-   while (1){
-       
-       MPU.getMPUState();
-       Serial.print("X: " + String(MPU.xRot) + "  Y: " + String(MPU.yRot) + "  Z: " + String(MPU.zRot));
-       // Serial.println();
-      
-       switch(buttonState){
-           case WaitPress:
-             break;
-           case DebouncePress:
-             delayMs(0.1);
-             buttonState = WaitRelease;
-             break;
-           case WaitRelease:
-             break;
-           case DebounceRelease:
-             delayMs(0.1);
-             if(place_state == buzzerON){
-               setDutyCycle(0);
-                place_state = buzzerOff;
-             }
-
-
-             buttonState = WaitPress;
-             break;
-         }
-
-
-
-
-       // 
-       switch (place_state){
-         case read_data:
-           Serial.print("Read data");
-           if (abs(MPU.yRot) > yRotThresh || abs(MPU.xRot) > xRotThresh){ 
-               // Serial.print(" AAHHHH");
-               displayFace(frowny);
-               place_state = buzzerON;
-           }
-
-
-           else{
-               displayFace(smiley);
-           }
-           delayMs(100);
-           break;
-
-
-         case buzzerON:
-           Serial.print("Buzzer state");
-           
-           for (i = 1000; i < 4000; i++){
-               IncFrequency(i);
-               setDutyCycle(0.1);
-           }
-           
-           
-           
-           if (abs(MPU.xRot) > xRotThresh || abs(MPU.yRot) > yRotThresh){ 
-               
-               displayFace(frowny);
-           }
-
-
-           else{
-               displayFace(smiley);
-           }
-
-
-           break;
-
-
-           case buzzerOff:
-           Serial.println("Buzzeroff state");
-           //MPU.getMPUState();
-           if (abs(MPU.xRot) < xRotThresh && abs(MPU.yRot) < yRotThresh){ 
-             // Serial.print(" AAHHHH");
-             place_state = read_data;
-         }
-           
-
-
-       }
-       
-
-
-       
-
-
-       Serial.println();
-
-
-   }
-
-
-}
-
-
-ISR(PCINT1_vect){
-   
-   if(buttonState == WaitPress){
-       buttonState = DebouncePress;
-       
-     }
-   
-   else if (buttonState == WaitRelease){
-     buttonState = DebounceRelease;
-     
-   }
-}
+    case Reverse:
+      displayFace(ReverseLED);
+      // Motor Reverse Code
+      break;
+  }
+  delayMs(LOOP_DELAY_MS); 
+} 
+} 
