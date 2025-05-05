@@ -29,7 +29,7 @@ void initPWMTimer3(){
     TCCR3B &= ~(1<<CS32);
 
      // Set initial duty cycle to 
-     OCR3A = 700;  // Right motor
+     OCR3A = 800;  // Right motor
      
 }
 
@@ -53,7 +53,7 @@ void initPWMTimer3(){
     TCCR4B &= ~(1<<CS42);
 
      // Set initial duty cycle to 50%
-     OCR4A = 700;  // left motor
+     OCR4A = 800;  // left motor
 
     } 
 
@@ -81,10 +81,11 @@ void setDirectionBackward() {
     // Left motor backward (IN1=LOW, IN2=HIGH)
     PORTA &= ~(1 << PA0);
     PORTA |= (1 << PA1);
-
+    OCR4A = 512;  // left motor
     // Right motor backward (IN3=HIGH, IN4=LOW)
     PORTA |= (1 << PA2);
     PORTA &= ~(1 << PA3);
+    OCR3A = 512;  // Right motor
 }
 
 void setDirectionLeft() {
@@ -101,10 +102,12 @@ void setDirectionRight() {
     // Left motor forward
     PORTA |= (1 << PA0);
     PORTA &= ~(1 << PA1);
+    OCR4A = 512;  // left motor
 
     // Right motor backward
     PORTA |= (1 << PA2);
     PORTA &= ~(1 << PA3);
+    OCR3A = 512;  // Right motor
 }
 
 void stopMotors() {
@@ -112,6 +115,3 @@ void stopMotors() {
     OCR3C = 0;
     PORTA &= ~((1 << 0) | (1 << 1) | (1 << 2) | (1 << 3)); // Set all direction pins to low
 }
-
-
-
