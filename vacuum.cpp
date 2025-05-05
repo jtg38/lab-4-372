@@ -21,7 +21,7 @@ void initPWMTimer5(){
     TCCR5B &= ~(1 << CS52);
 
     // Set duty cycle - 100% is 1023 
-    OCR5A = 0;
+    OCR5A = 1023;
 }
 
 void initMotorVacuumDirections() {
@@ -39,14 +39,8 @@ void setVacuumDirectionBackward() {
     PORTJ &= ~(1 << PJ0);  // IN1 = LOW
     PORTJ |= (1 << PJ1);   // IN2 = HIGH
 }
-
 // Stop the vacuum motor (both inputs LOW)
 void stopVacuumMotor() {
     PORTJ &= ~(1 << PJ0);
     PORTJ &= ~(1 << PJ1);
-
-    // Optional: also zero the PWM duty cycle
-    OCR5A = 0;
 }
-
-
