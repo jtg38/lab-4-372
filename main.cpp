@@ -3,6 +3,7 @@
 #include "pwm.h"
 #include <Arduino.h>
 #include "spi.h"
+#include "vacuum.h"
 
 unsigned char StopLED[8] = {
   0b10000001,
@@ -58,6 +59,8 @@ int main(){
   SPI_MASTER_Init();
   initPWMTimer3();
   initPWMTimer4();
+  initPWMTimer5();
+  initMotorVacuumDirections();
   initMotorDirections();
   write_execute(0x0B, 0x07);   // Display all 8 digits
   write_execute(0x09, 0x00);  // No decode mode (directly control segments)
@@ -98,6 +101,7 @@ while(1){
       initPWMTimer4();
       initMotorDirections();
       setDirectionForward();
+      setVacuumDirectionForward();
       // Motor Forward Code
       break;
 
@@ -105,6 +109,7 @@ while(1){
       displayFace(StopLED);
       // Motor Stop Code
       stopMotors();
+      stopVacuumMotor(); 
       stop_delay_counter++; 
       // Check if delay is complete
       if (stop_delay_counter >= STOP_DELAY_TARGET) {
@@ -117,6 +122,7 @@ while(1){
       initPWMTimer3();
       initPWMTimer4();
       initMotorDirections();
+      setVacuumDirectionBackward();
       setDirectionBackward();
       // Motor Reverse Code
       break;
