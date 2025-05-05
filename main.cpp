@@ -56,7 +56,9 @@ int main(){
   Serial.begin(9600);
   HCSR04_init();
   SPI_MASTER_Init();
-  //initPWMTimer3();
+  initPWMTimer3();
+  initPWMTimer4();
+  initMotorDirections();
   write_execute(0x0B, 0x07);   // Display all 8 digits
   write_execute(0x09, 0x00);  // No decode mode (directly control segments)
   write_execute(0x0C, 0x01);    // Shutdown mode off (normal operation)
@@ -92,12 +94,17 @@ while(1){
   switch(state) {
     case Forward:
       displayFace(ForwardLED);
+      initPWMTimer3();
+      initPWMTimer4();
+      initMotorDirections();
+      setDirectionForward();
       // Motor Forward Code
       break;
 
     case Stopped:
       displayFace(StopLED);
       // Motor Stop Code
+      stopMotors();
       stop_delay_counter++; 
       // Check if delay is complete
       if (stop_delay_counter >= STOP_DELAY_TARGET) {
@@ -107,6 +114,10 @@ while(1){
 
     case Reverse:
       displayFace(ReverseLED);
+      initPWMTimer3();
+      initPWMTimer4();
+      initMotorDirections();
+      setDirectionBackward();
       // Motor Reverse Code
       break;
   }
