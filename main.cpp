@@ -85,6 +85,8 @@ while(1){
   if (distance > 0) {
       // Condition to return to Forward 
       if ((state == Stopped || state == Reverse) && distance > 15) {
+          setDirectionRight();
+          delayMs(500);
           state = Forward;
       }
       // Condition to enter Stopped 
