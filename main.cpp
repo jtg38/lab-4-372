@@ -122,7 +122,7 @@ while(1){
       initPWMTimer3();
       initPWMTimer4();
       initMotorDirections();
-      setVacuumDirectionBackward();
+      setVacuumDirectionForward();
       setDirectionBackward();
       // Motor Reverse Code
       break;
